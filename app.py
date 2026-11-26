@@ -1,0 +1,51 @@
+from flask import Flask, Response, request
+from gzip import compress
+from hashlib import sha256
+
+app = Flask(__name__)
+
+PAGE = '''<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Te amo Sandra</title><style>*{box-sizing:border-box}body{margin:0;background:#111c40;overflow:hidden}canvas{display:block;width:100vw;height:100dvh;cursor:pointer}</style></head><body><canvas id="heart" aria-label="Corazón animado: Te amo Sandra"></canvas><script>
+'use strict';
+const canvas=document.querySelector('#heart'),ctx=canvas.getContext('2d',{alpha:false});
+const config=Object.freeze({build:4,reveal:4.5,rain:3.8,transition:1.1,interval:2500,morph:220,fps:30,breath:30,speed:1.5,dx:.033,dy:.047});
+const phrases=['Te amo Sandra','I love you Sandra','Je t’aime Sandra','Ti amo Sandra','Ich liebe dich Sandra','Eu te amo Sandra','サンドラ 愛してる','산드라 사랑해','桑德拉 我爱你','Я люблю тебя Сандра','Seni seviyorum Sandra','Σ’ αγαπώ Sandra','Ik hou van jou Sandra','Jag älskar dig Sandra','Kocham cię Sandra','Aku cinta kamu Sandra','Anh yêu em Sandra','ฉันรักเธอ Sandra','मैं तुमसे प्यार करता हूँ Sandra','Kuyayki Sandra'];
+const segmenter=typeof Intl.Segmenter==='function'?new Intl.Segmenter(undefined,{granularity:'grapheme'}):null;
+const split=s=>segmenter?Array.from(segmenter.segment(s),v=>v.segment):Array.from(s);
+const glyphs=[...new Set(split(phrases.join(' · ')+' · '))],ids=new Map(glyphs.map((v,i)=>[v,i])),texts=phrases.map(s=>Uint16Array.from(split(s+' · '),v=>ids.get(v))),alphabet=Uint16Array.from(glyphs.flatMap((v,i)=>v.trim()?[i]:[]));
+const random=n=>Math.random()*n,pick=a=>a[Math.floor(random(a.length))],clamp=x=>Math.max(0,Math.min(1,x)),smooth=x=>{x=clamp(x);return x*x*(3-2*x)},inside=(x,y)=>(x*x+y*y-1)**3-x*x*y**3<=0;
+const geometry=[],rows=[];
+for(let j=0;j<49;j++){const y=1.25-j*config.dy;let row=[];for(let i=-40;i<=40;i++){const x=i*config.dx;if(!inside(x,y)){if(row.length)rows.push(row);row=[];continue}row.push(geometry.length);geometry.push([x,-y])}if(row.length)rows.push(row)}
+const count=geometry.length,stride=9,data=new Float32Array(count*stride),letters=new Uint16Array(count),noise=new Uint16Array(count),collisions=new Uint16Array(count),palette=Array.from({length:360},(_,i)=>`hsl(${i},92%,70%)`),red='#ff3549';
+const origins=[[0,-1.1],[0,.95],[-1.05,-.25],[1.05,-.25],[0,-.15],[-.65,-.85],[.65,-.85],[-.55,.45],[.55,.45]];
+const distances=geometry.map(([x,y])=>Math.min(...origins.map(([ox,oy])=>Math.hypot(x-ox,y-oy))));
+const farthest=Math.max(...distances);
+geometry.forEach(([x,y],i)=>{const wave=distances[i]/farthest;data.set([x,y,random(360),15+random(65),clamp((y+1.25)/2.25)*config.rain+random(.65),clamp(wave*.88+random(.12))*(config.build-.3),x/(Math.hypot(x,y+.116)||1),(y+.116)/(Math.hypot(x,y+.116)||1),random(Math.PI*2)],i*stride)});
+const layer=document.createElement('canvas'),bg=layer.getContext('2d',{alpha:false}),mask=document.createElement('canvas'),mc=mask.getContext('2d',{willReadFrequently:true});
+const stars=Array.from({length:150},()=>[Math.random(),Math.random(),.4+random(1.2),.12+random(.45)]);
+let w,h,dpr,scale,cx,cy,font,names=[],start=performance.now(),last=0,phase=-1,noiseTick=-1,raf=0,hiddenAt=0;
+function rewrite(){for(const row of rows){let k=0;while(k<row.length){const text=pick(texts);for(let j=0;j<text.length&&k<row.length;j++,k++)letters[row[k]]=text[j]}}}
+function background(){layer.width=canvas.width;layer.height=canvas.height;bg.setTransform(dpr,0,0,dpr,0,0);const g=bg.createLinearGradient(0,0,w,h);g.addColorStop(0,'#111c40');g.addColorStop(.5,'#302052');g.addColorStop(1,'#142b49');bg.fillStyle=g;bg.fillRect(0,0,w,h);const n=bg.createRadialGradient(cx,cy,0,cx,cy,scale*1.6);n.addColorStop(0,'rgba(80,105,220,.26)');n.addColorStop(.55,'rgba(85,45,170,.13)');n.addColorStop(1,'rgba(20,30,80,0)');bg.fillStyle=n;bg.fillRect(0,0,w,h);bg.fillStyle='#d8eaff';for(const [x,y,r,a] of stars){bg.globalAlpha=a;bg.beginPath();bg.arc(x*w,y*h,r,0,Math.PI*2);bg.fill()}bg.globalAlpha=1}
+function typography(){names=[];collisions.fill(0);mask.width=Math.ceil(scale*2);mask.height=Math.ceil(scale*1.2);const mx=mask.width/2,my=mask.height/2;let index=0;for(const [text,size,y] of [['Te amo',.16,-.36],['Sandra',.30,-.10]]){const f=`italic ${scale*size}px Georgia`;mc.font=f;mc.textAlign='center';mc.textBaseline='middle';const chars=split(text),widths=chars.map(ch=>mc.measureText(ch).width);const total=widths.reduce((a,b)=>a+b,0);const first=mc.measureText(chars[0]),end=mc.measureText(chars[chars.length-1]);const left=widths[0]/2-first.actualBoundingBoxLeft,right=total-widths[widths.length-1]/2+end.actualBoundingBoxRight;let x=-(left+right)/2;chars.forEach((ch,k)=>{const px=x+widths[k]/2,py=y*scale;x+=widths[k];if(!ch.trim())return;const bit=1<<index;names.push({ch,x:px,y:py,font:f,delay:config.reveal+index*.20});index++;mc.clearRect(0,0,mask.width,mask.height);mc.fillStyle=mc.strokeStyle='#fff';mc.lineWidth=scale*.024;mc.lineJoin='round';mc.strokeText(ch,mx+px,my+py);mc.fillText(ch,mx+px,my+py);const pixels=mc.getImageData(0,0,mask.width,mask.height).data;for(let i=0;i<count;i++){const a=i*stride,xx=mx+data[a]*scale,yy=my+data[a+1]*scale;const ex=data[a+6]*scale*config.breath/275,ey=data[a+7]*scale*config.breath/275;const l=Math.max(0,Math.floor(xx+Math.min(0,ex)-scale*config.dx/2)),r=Math.min(mask.width-1,Math.ceil(xx+Math.max(0,ex)+scale*config.dx/2)),top=Math.max(0,Math.floor(yy+Math.min(0,ey)-font/2)),bottom=Math.min(mask.height-1,Math.ceil(yy+Math.max(0,ey)+font/2));let hit=false;for(let v=top;v<=bottom&&!hit;v++)for(let u=l;u<=r;u++)if(pixels[(v*mask.width+u)*4+3]>20){hit=true;break}if(hit)collisions[i]|=bit}})}mask.width=mask.height=1}
+function resize(){w=canvas.clientWidth;h=canvas.clientHeight;dpr=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);scale=Math.min(w,h)/2.65;cx=w/2;cy=h/2+scale*.12;font=scale*.038;background();typography()}
+function draw(now){raf=requestAnimationFrame(draw);if(now-last<1000/config.fps-1)return;last=now;const t=(now-start)/1000,mt=(t-config.reveal)*1000,p=Math.floor(mt/config.interval),morph=mt>=0&&mt%config.interval<config.morph;if(mt>=0&&p!==phase){rewrite();phase=p}if(morph&&Math.floor(now/65)!==noiseTick){noiseTick=Math.floor(now/65);for(let i=0;i<count;i++)noise[i]=pick(alphabet)}ctx.globalAlpha=1;ctx.drawImage(layer,0,0,w,h);ctx.save();ctx.translate(cx,cy);const breathTime=Math.max(0,t-config.reveal)*2*config.speed,breathIn=smooth((t-config.reveal)/1.2),amplitude=config.breath/275*scale*breathIn;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`bold ${font}px Arial`;const opacity=names.map(n=>smooth((t-n.delay)/.35));for(let i=0;i<count;i++){const a=i*stride;let alpha=smooth((t-data[a+5])/.3);let bits=collisions[i];while(bits&&alpha>0){const bit=bits&-bits;alpha*=1-opacity[31-Math.clz32(bit)];bits^=bit}if(alpha<=0)continue;const local=t-config.reveal-data[a+4],f=smooth(local/config.transition),target=(data[a+2]+Math.max(0,local)*data[a+3])%360;const delta=(target-355+540)%360-180;ctx.fillStyle=local<=0?red:palette[Math.floor((355+delta*f+360)%360)];ctx.globalAlpha=alpha;const expansion=(1-Math.cos(breathTime+data[a+8]*.15))*.5*amplitude;ctx.fillText(glyphs[(morph?noise:letters)[i]],data[a]*scale+data[a+6]*expansion,data[a+1]*scale+data[a+7]*expansion,scale*config.dx*.96)}ctx.fillStyle='#f3f8ff';ctx.shadowColor='#9ebcff';ctx.shadowBlur=10;names.forEach((n,i)=>{ctx.globalAlpha=opacity[i];ctx.font=n.font;ctx.fillText(n.ch,n.x,n.y)});ctx.restore()}
+function restart(){start=performance.now();phase=-1;noiseTick=-1;rewrite()}
+canvas.addEventListener('click',restart);let resizeFrame=0;window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(resize)});document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=performance.now();cancelAnimationFrame(raf)}else{if(hiddenAt)start+=performance.now()-hiddenAt;hiddenAt=0;last=0;raf=requestAnimationFrame(draw)}});rewrite();resize();if(!document.hidden)raf=requestAnimationFrame(draw);else hiddenAt=performance.now();
+</script></body></html>'''.encode('utf-8')
+
+PAYLOADS = {False: PAGE, True: compress(memoryview(PAGE), compresslevel=9, mtime=0)}
+ETAGS = {key: sha256(value).hexdigest() for key, value in PAYLOADS.items()}
+
+@app.get('/')
+def home():
+    zipped = request.accept_encodings['gzip'] > 0 and request.accept_encodings['gzip'] >= request.accept_encodings['identity']
+    response = Response(PAYLOADS[zipped], content_type='text/html; charset=utf-8')
+    response.set_etag(ETAGS[zipped])
+    response.headers['Vary'] = 'Accept-Encoding'
+    response.headers['Cache-Control'] = 'public, max-age=0, must-revalidate'
+    if zipped:
+        response.headers['Content-Encoding'] = 'gzip'
+    return response.make_conditional(request)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False)
