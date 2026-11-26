@@ -16,7 +16,7 @@ const distances=geometry.map(([x,y])=>Math.min(...origins.map(([ox,oy])=>Math.hy
 const farthest=Math.max(...distances);
 geometry.forEach(([x,y],i)=>{const wave=distances[i]/farthest;data.set([x,y,random(360),15+random(65),clamp((y+1.25)/2.25)*config.rain+random(.65),clamp(wave*.88+random(.12))*(config.build-.3),x/(Math.hypot(x,y+.116)||1),(y+.116)/(Math.hypot(x,y+.116)||1),random(Math.PI*2)],i*stride)});
 const layer=document.createElement('canvas'),bg=layer.getContext('2d',{alpha:false}),mask=document.createElement('canvas'),mc=mask.getContext('2d',{willReadFrequently:true});
-const stars=Array.from({length:150},()=>[Math.random(),Math.random(),.4+random(1.2),.12+random(.45)]);
+const stars=Array.from({length:360},()=>[Math.random(),Math.random(),.35+random(1.5),.1+random(.5)]);
 let w,h,dpr,scale,cx,cy,font,names=[],start=performance.now(),last=0,phase=-1,noiseTick=-1,raf=0,hiddenAt=0;
 function rewrite(){for(const row of rows){let k=0;while(k<row.length){const text=pick(texts);for(let j=0;j<text.length&&k<row.length;j++,k++)letters[row[k]]=text[j]}}}
 function background(){layer.width=canvas.width;layer.height=canvas.height;bg.setTransform(dpr,0,0,dpr,0,0);const g=bg.createLinearGradient(0,0,w,h);g.addColorStop(0,'#111c40');g.addColorStop(.5,'#302052');g.addColorStop(1,'#142b49');bg.fillStyle=g;bg.fillRect(0,0,w,h);const n=bg.createRadialGradient(cx,cy,0,cx,cy,scale*1.6);n.addColorStop(0,'rgba(80,105,220,.26)');n.addColorStop(.55,'rgba(85,45,170,.13)');n.addColorStop(1,'rgba(20,30,80,0)');bg.fillStyle=n;bg.fillRect(0,0,w,h);bg.fillStyle='#d8eaff';for(const [x,y,r,a] of stars){bg.globalAlpha=a;bg.beginPath();bg.arc(x*w,y*h,r,0,Math.PI*2);bg.fill()}bg.globalAlpha=1}
